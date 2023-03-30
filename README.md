@@ -368,18 +368,17 @@ As widely said, the user need an application (or an agent) to scan the qr code p
 
 <img src="screen5.png" width="50%">
 
-```sh
+When user insert right pin, the access will be granted and can scan the qr code and initializate the communication
+
 <img src="IMG_2184.PNG" width="20%">
-```
 
-Se le chiavi vengono modificate l'accesso al wallet fallisce e si ottiene un errore
+<img src="IMG_2185.PNG" width="20%">
 
-Quando l'utente inserisce il pin corretto ha accesso all'app e può scansoniare QR Code
-per le connessioni. Quando scansiona un qr code viene instaurata una connessione.
+<img src="IMG_2189.PNG" width="20%">
 
-<img src="IMG_2185.PNG" width="30%">
-<img src="IMG_2189.PNG" width="30%">
-<img src="IMG_2190.PNG" width="30%">
+<img src="IMG_2190.PNG" width="20%">
+
+## DID Exchange
 
 In what follows, an investigation about the key used for signing the credentials is presented.
 
@@ -427,12 +426,93 @@ When a connection has been established (state: completed), both agents will know
 }
 ```
 
-In fase di emissione di credenziali verranno inviate delle credenziali all'utente,
-quindi il solid server si comporta da issuer. In fase di verifica, il solid server si
-comporta da verifier e utilizza l'apposito metodo per verificare le credenziali.
+## Server Verification
 
-## Limitazioni
+As said, the server can verify the credentials send by client (users) before grant access.
 
-Ci sono diverse limitazioni all'approccio esistente. HL Aries è ancora troppo giovane e
-non offre stabilità in termini di cambiamenti all'ecosistema, difatti c'è ancora
-qualche incompatiblità tra le versioni esistenti per i diversi linguaggi di programmazione.
+Both in JSON-LD credentials and Indy Credentials a presentation request must be done.
+In the case of JSON-LD credentials the verification of response is done using JSON-LD protocol. In Indy Credentials instead, a call to the blockchain is necessary to verify the truth.
+
+The presentation request can be predecative in case of ZKP, or require the entire propierty, such in our case
+
+```json
+{
+  "auto_verify": true,
+  "comment": "string",
+  "connection_id": "2c5c3f39-430d-46d7-98ef-9759ac8cb967",
+  "presentation_request": {
+    "indy": {
+      "name": "Proof request",
+      "non_revoked": {
+        "from": 1640995199,
+        "to": 1640995199
+      },
+      "nonce": "1",
+      "requested_attributes": {
+        "additionalProp1": {
+          "name": "webid",
+          "non_revoked": {
+            "from": 1640995199,
+            "to": 1640995199
+          },
+          "restrictions": [
+            {
+            }
+          ]
+        }
+      },
+      "requested_predicates": {
+      },
+      "version": "1.0"
+    }
+  },
+  "trace": false
+}
+```
+
+Then, user will check the requested attributes, once established that is ok, can answer with a presentation, which contains the value of the proof.
+
+```json
+"indy": {
+                "proof": {
+                    "proofs": [
+                        {
+                            "primary_proof": {
+                                "eq_proof": {
+                                    "revealed_attrs": {},
+                                    "a_prime": "6617956130816097529977003013297340073831203129591005493142910020191754288578328001177285344409515105260785432386257485392920618442728922787076325843304732473184593188551687610189908231201398268855076610126745121232349566781239124401550590464107306305838429928641474048078000868127296393663026380019327309919417649630626359840047677716163674624984050304659226893973568267828320010926456731623057451640266243933131887866590162467903061727453806705170481331634198590186047672525293866500118502573754494981687055157420622252835945568061709015991160898927515514812497742423207286843024744365970791670164426911654616464157",
+                                    "e": "30234257955898599471664431058550910339053745466167005712152081782232460277550906381292168747398987266159431513545955276944354076471469024",
+                                    "v": "49767860594446175917250094073603771960700952896041917528184830303441427819992921656785667552180246210301677064999172792496984773159274120232170798857799692886231200072503411357319641275221332931828781150190753270059127644510685624695270758600199645884754583305873523201980676898608583191682249694503371741886809826764109488844341893198869318815137343929618573511078335596136354495872629725433660832102915578075917870462205779269935259415319641268390762333465279032754555197207375531110881650396724875651232812402249072438234200104763480224833270045356516138617944648698863517955705232044235415994317270725489747768059897405325486822634846656860719377596978268564759342583264604930611617151848238631558709182984678224945894416837401861251193363054549213141764661006718013532517602975424170232621851570634673320879055158273514144141602913217807910159353494923033604151364888765051458510638633048122317276272124588283087666",
+                                    "m": {
+                                        "webid": "10661184565699898150867470066382971009713369615326095013072736743613946143993860064490875005470597188604637001806351424234570183077089517672424642682825407741132934255974760189552",
+                                        "master_secret": "14264857867915725049783463585716708684174996611171648036493249558189670538486848236441049944532305110223426400429053177007612155103280852021745699386431167208482154541181163534108"
+                                    },
+                                    "m2": "6755983302053761543301215637062445610562439402472298318529403534683548242158436451798493999368773340172302562391062712582260986998949753610684056766589578316974623258247356642795"
+                                },
+                                "ge_proofs": []
+                            },
+                            "non_revoc_proof": null
+                        }
+                    ],
+                    "aggregated_proof": {
+                        "c_hash": "101383845659958909031749808473723906754089991159381441740561118757247314426113",
+                        "c_list": [
+                            [
+                                52,
+                                108,
+                                ...
+
+                                ...
+                                ...
+                                
+                            ]
+                        ]
+                    }
+                },
+```
+
+At this point Hyperledger Aries will ask to the public ledger if the proof is valid and if it is correctly referred to the value passed as verifiable credentials and give to the user access to the server by extracting the user.id from the presentation send from the user
+
+## Conclusions
+
+Such approach aims at decentralize the way in which Solid authenticate users. The proposed schema shown validity of such approach also in terms of security, considering signature on issuing. An approach based on json-ld may eliminate blockchain in favor of vucabulary but consideration about ZKP must be done in order to assess if JSON-LD can do the same of Indy in terms of predicative proof. Deployed application is developed in React Native but needs a mediator to work, some existing solution uses Aca-Py which could be a valid mediator. The involving of a thirdy part may increase the level of complexity in terms of security evaluation to be done.
